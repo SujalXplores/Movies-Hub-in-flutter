@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:movies_hub/movieCard.dart';
 import 'package:movies_hub/models/movies.dart';
-import 'package:cool_alert/cool_alert.dart';
+import 'package:alert/alert.dart';
 
 final searchController = TextEditingController();
+String s = '' != null ? 'prince' : searchController.text;
 
 class App extends StatefulWidget {
   @override
@@ -13,9 +14,7 @@ class App extends StatefulWidget {
 }
 
 class _App extends State<App> {
-  bool typing = false;
   List<Movie> _movies = [];
-  String s = '' != null ? 'prince' : searchController.text;
 
   @override
   void initState() {
@@ -30,16 +29,13 @@ class _App extends State<App> {
         _movies = movies;
       });
     } catch (e) {
-      CoolAlert.show(
-        context: context,
-        type: CoolAlertType.info,
-        text: "No results found",
-      );
+      Alert(message: 'No results found').show();
     }
   }
 
   Future<List<Movie>> _fetchAllMovies() async {
-    final response = await http.get(Uri.parse("https://www.omdbapi.com/?s=" + s + "&apikey=564727fa"));
+    final response = await http
+        .get(Uri.parse("https://www.omdbapi.com/?s=" + s + "&apikey=564727fa"));
     if (response.statusCode == 200) {
       final result = jsonDecode(response.body);
       Iterable list = result["Search"];
@@ -55,40 +51,38 @@ class _App extends State<App> {
         debugShowCheckedModeBanner: false,
         home: Scaffold(
             appBar: AppBar(
-              title: typing ? TextBox() : Text("Movies Hub"),
-              leading: IconButton(
-                icon: Icon(Icons.search),
-                onPressed: () {
-                  setState(() {
-                    typing = !typing;
-                    s = searchController.text;
+                title: Container(
+              alignment: Alignment.centerLeft,
+              color: Colors.white,
+              child: Container(
+                child: TextField(
+                  onSubmitted: (value) {
+                    s = value;
                     if (s != '') {
                       _populateAllMovies();
                     }
-                  });
-                },
+                  },
+                  textInputAction: TextInputAction.search,
+                  controller: searchController,
+                  autofocus: false,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  decoration: InputDecoration(
+                      hintText: 'Search',
+                      prefixIcon: IconButton(
+                        icon: Icon(Icons.search),
+                        onPressed: () {
+                          setState(() {
+                            s = searchController.text;
+                            if (s != '') {
+                              _populateAllMovies();
+                            }
+                          });
+                        },
+                      )),
+                ),
               ),
-            ),
+            )),
             body: MoviesWidget(movies: _movies)));
-  }
-}
-
-class TextBox extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      alignment: Alignment.centerLeft,
-      color: Colors.white,
-      child: TextField(
-        controller: searchController,
-        autofocus: false,
-        autocorrect: false,
-        enableSuggestions: false,
-        decoration: InputDecoration(
-          border: OutlineInputBorder(),
-          hintText: 'Search',
-        ),
-      ),
-    );
   }
 }
